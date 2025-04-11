@@ -3,7 +3,6 @@ import Cajalogin from "./cajalogin";
 function Login() {
   return (
     <Cajalogin>
-      {/* Encabezado */}
       <div className="text-center mb-6 sm:mb-8">
         <div className="flex justify-center mb-3 sm:mb-4">
           <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
