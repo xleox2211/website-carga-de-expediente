@@ -6,7 +6,6 @@ function App() {
     <>
       <main className="flex flex-col min-h-screen bg-gray-100">
         <Header />
-
         <Login />
         <Footer />
       </main>
