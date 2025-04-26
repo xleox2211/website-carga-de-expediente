@@ -12,7 +12,7 @@ function App() {
       <div className="blurEffect"></div>
       <Header />
 
-      <main className="flex-grow flex flex-col items-center justify-center px-4">
+      <main className="flex-grow flex flex-col items-center justify-center px-4 w-full">
         <Title />
         <Login />
       </main>

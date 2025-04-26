@@ -3,8 +3,8 @@ import GenericBox from "./GenericBox";
 
 function Login() {
   return (
-    <div className="flex flex-col items-center justify-center flex-grow py-8 sm:py-12 px-4 sm:px-6 lg:px-8 w-full">
-      <GenericBox>
+    <div className="flex flex-col items-center justify-center flex-grow py-8 sm:py-12 px-4 sm:px-6 lg:px-8 w-full max-w-xl">
+      <GenericBox styles="w-full max-w">
         <div className="text-center mb-6 sm:mb-8">
           <div className="flex justify-center mb-3 sm:mb-4">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full flex items-center justify-center shadow-lg">
