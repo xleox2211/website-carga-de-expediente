@@ -6,4 +6,16 @@
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
+
+    position: relative;
+}
+
+.blurEffect{
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(10px) contrast(1.2) saturate(0) brightness(0.8);
+}
+
+.backgroundStyles> *{
+    z-index: 0;
 }

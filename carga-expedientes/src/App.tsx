@@ -8,6 +8,9 @@ function App() {
     <div
       className="min-h-screen flex flex-col backgroundStyles"
     >
+      <div className="blurEffect">
+
+      </div>
       <Header />
       <main className="flex-grow flex flex-col items-center justify-center px-4">
         <div className="bg-white bg-opacity-50 backdrop-blur-sm rounded-xl p-6 shadow-2xl transition-all hover:scale-[1.01] duration-300 w-auto max-w-[90vw] min-w-[200px]">
