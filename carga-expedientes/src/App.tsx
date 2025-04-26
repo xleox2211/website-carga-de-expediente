@@ -1,19 +1,12 @@
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
-import fondo from "./assets/fondo.jpg";
+
 
 function App() {
   return (
     <div
-      className="min-h-screen flex flex-col"
-      style={{
-        backgroundImage: `url(${fondo})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-        backgroundRepeat: "no-repeat",
-      }}
+      className="min-h-screen flex flex-col backgroundStyles"
     >
       <Header />
       <main className="flex-grow flex flex-col items-center justify-center px-4">
