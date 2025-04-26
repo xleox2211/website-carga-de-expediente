@@ -9,7 +9,7 @@ function GenericBox({
 }) {
   return (
     <div
-      className={`bg-white p-6 sm:p-8 rounded-xl shadow-2xl  w-full max-w-md mx-4 ${styles}`}
+      className={`bg-white p-6 sm:p-8 rounded-md shadow-2xl  w-full max-w-md mx-4 ${styles}`}
     >
       {children}
     </div>
