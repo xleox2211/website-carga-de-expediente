@@ -1,5 +1,6 @@
 import BlueButton from "./BlueButton";
 import GenericBox from "./GenericBox";
+import { Link } from "react-router-dom";
 
 function Login() {
   return (
@@ -63,9 +64,11 @@ function Login() {
             />
           </div>
 
-          <BlueButton onClick={() => { console.log("Login clicked"); }}>
-            Ingresar
-          </BlueButton>
+          <Link to="/dashboard">
+            <BlueButton>
+              Ingresar
+            </BlueButton>
+          </Link>
         </form>
       </GenericBox>
     </div>
