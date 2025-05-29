@@ -54,7 +54,7 @@ function DashboardPage() {
                 <tr className="h-12">
                   <th className="px-4 text-center">Cedula</th>
                   <th className="px-4 text-center">Alumno</th>
-                  <th className="px-4 text-center">Docente</th>
+                  <th className="px-4 text-center">Tutor Académico</th>
                   <th className="px-4 text-center">Creado / Modificado</th>
                   <th className="px-4 text-center">Carrera</th>
                   <th className="px-4 text-center">Acciones</th>
