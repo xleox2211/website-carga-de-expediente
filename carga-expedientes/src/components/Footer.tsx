@@ -4,8 +4,7 @@ function Footer() {
       <div className="container mx-auto px-2">
         <div className="flex flex-col md:flex-row justify-center md:justify-around items-center gap-1 md:gap-4 text-center">
           <p className="text-xs sm:text-sm md:text-base">
-            Desarrolladores: Gonzalo Lara, Hebert Horrelles, Sergio Ricaflor,
-            Leonardo Garcia
+            Desarrolladores: Sergio Ricaflor, Leonardo Garcia, Gonzalo Lara, Hebert Torrelles, Naikary Crespo.
           </p>
         </div>
       </div>

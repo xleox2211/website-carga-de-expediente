@@ -1,9 +1,44 @@
+import { useState } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BG from "../components/Bg";
 import BlueButton from "../components/BlueButton";
+import ExpedienteItem from "../components/expedienteItem";
+import AddExpedienteDialog from "../components/addExpedienteDialog";
 
 function DashboardPage() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [expedientes, setExpedientes] = useState<Expediente[]>([
+    {
+      CI: 123456789,
+      nombre: "Juan Perez",
+      profesor: "Prof. Roberto Acosta",
+      fechaCreacion: "2023-10-01",
+      fechaModificacion: "2023-10-01 22:00:00",
+      carrera: "Ingeniería de Sistemas",
+    },
+    {
+      CI: 123456789,
+      nombre: "Juan Perez",
+      profesor: "Roberto Acosta",
+      fechaCreacion: "2023-10-01",
+      fechaModificacion: "2023-10-01 22:00:00",
+      carrera: "Ingeniería de Sistemas",
+    },
+    {
+      CI: 123456789,
+      nombre: "Juan Perez",
+      profesor: "Roberto Acosta",
+      fechaCreacion: "2023-10-01",
+      fechaModificacion: "2023-10-01 22:00:00",
+      carrera: "Ingeniería de Sistemas",
+    }
+  ]);
+  
+  function addExpediente(expediente: Expediente) {
+    setExpedientes([...expedientes, expediente]);
+  }
+
   return (
     <BG>
       <Header />
@@ -26,35 +61,14 @@ function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {Array.from({ length: 17 }, (_, index) => (
-                  <tr
-                    key={index}
-                    className="h-12 hover:bg-gray-300 transition duration-200 odd:bg-transparent even:bg-gray-200"
-                  >
-                    <td className="px-4 text-center">{index}</td>
-                    <td className="px-4 text-center">Juan Perez {index}</td>
-                    <td className="px-4 text-center">
-                      Prof. Roberto Acosta {index}
-                    </td>
-                    <td className="px-4 text-center whitespace-nowrap">
-                      Creado: 2023-10-01 Modificado: 12:00:00
-                    </td>
-                    <td className="px-4 text-center">Ingeniería de Sistemas</td>
-                    <td className="px-4 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <BlueButton onClick={() => alert("Editar")}>
-                          Editar
-                        </BlueButton>
-                        <BlueButton onClick={() => alert("Ver")}>
-                          Ver
-                        </BlueButton>
-                        <BlueButton onClick={() => alert("Eliminar")}>
-                          Eliminar
-                        </BlueButton>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {
+                  expedientes.map((expediente, index) => (
+                    <ExpedienteItem
+                      key={index}
+                      {...expediente}
+                    />
+                  ))
+                }
               </tbody>
             </table>
           </div>
@@ -62,12 +76,13 @@ function DashboardPage() {
             {" "}
             {/* Pie fuera de la tabla */}
             <div className="flex justify-center">
-              <BlueButton onClick={() => alert("Agregar Usuario")}>
+              <BlueButton onClick={() => setIsOpen(true)} >
                 Agregar Expediente
               </BlueButton>
             </div>
           </div>
         </div>
+      <AddExpedienteDialog isOpen={isOpen} setOpen={setIsOpen} expedientFunction={addExpediente}/>
       </main>
       <Footer />
     </BG>
