@@ -1,8 +1,30 @@
 import BlueButton from "./BlueButton";
 import GenericBox from "./GenericBox";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import {  useAuth } from "../userContext"; // Adjust the import path as necessary
 
 function Login() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const form = event.currentTarget as HTMLFormElement;
+    const username = (form.elements.namedItem("username") as HTMLInputElement).value;
+    const password = (form.elements.namedItem("password") as HTMLInputElement).value;
+
+    try {
+      await login(username, password);
+      // Redirect to the dashboard or another page after successful login
+      navigate("/dashboard");
+
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed. Please check your credentials.");
+      // Handle login error (e.g., show error message)
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center flex-grow py-8 sm:py-12 px-4 sm:px-6 lg:px-8 w-full max-w-xl">
       <GenericBox styles="w-full max-w">
@@ -33,7 +55,7 @@ function Login() {
           </p>
         </div>
 
-        <form className="space-y-4 sm:space-y-6">
+        <form className="space-y-4 sm:space-y-6" onSubmit={handleLogin}>
           <div>
             <label
               htmlFor="username"
@@ -64,11 +86,11 @@ function Login() {
             />
           </div>
 
-          <Link to="/dashboard">
+          <button type="submit" className="w-full">
             <BlueButton>
-              Ingresar
+              Iniciar Sesión
             </BlueButton>
-          </Link>
+          </button>
         </form>
       </GenericBox>
     </div>
