@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import UserRouter from './src/routes/user.route';
 
 const app = express();
@@ -6,6 +7,7 @@ const app = express();
 app.use(express.json());
 
 // Router
+app.use(cors())
 app.use('/users', UserRouter);
 
 app.listen(3000, () => {

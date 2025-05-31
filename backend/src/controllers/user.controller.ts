@@ -1,5 +1,5 @@
 import { request, response } from "express";
-import User from "../models/Users";
+import {User} from "../models/Users";
 
 
 const createUser = (req = request, res = response) => {
@@ -135,12 +135,10 @@ const loginUser = (req = request, res = response) => {
         const response: responseData = {
             status: 200,
             message: 'Inicio de sesión exitoso',
-            data: true
+            data: foundUser
         };
         res.status(200).json(response);
     })
-    
-    res.json({ message: 'Datos de inicio de sesión inválidos' });
 };
 
 function userValidation(toValid : User) : boolean {
