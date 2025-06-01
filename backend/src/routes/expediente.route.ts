@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { createExpediente, updateExpediente, deleteExpediente, getExpedienteInList } from "../controllers/expediente.controller";
 
-const router = Router();
+const ExpedienteRouter = Router();
 
-router.post("/", createExpediente);
-router.put("/:CI", updateExpediente);
-router.delete("/:CI", deleteExpediente);
-router.get("/:page/:pageSize", getExpedienteInList);
+ExpedienteRouter.post("/", createExpediente);
+ExpedienteRouter.put("/:CI", updateExpediente);
+ExpedienteRouter.delete("/:CI", deleteExpediente);
+ExpedienteRouter.get("/:page/:pageSize", getExpedienteInList);
 
-export default router;
+export default ExpedienteRouter;
