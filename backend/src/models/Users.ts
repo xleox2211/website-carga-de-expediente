@@ -1,11 +1,7 @@
-import { Sequelize, DataTypes } from "sequelize";
+import { DataTypes } from "sequelize";
+import DataBase from "./DB.js";
 
-const Users = new Sequelize({
-  dialect: 'sqlite',
-  storage: ':memory:', // or use a file path like 'database.sqlite'
-});
-
-const User = Users.define('User', {
+const User = DataBase.define('User', {
     CI: {
         type: DataTypes.NUMBER,
         primaryKey: true
@@ -33,7 +29,7 @@ const User = Users.define('User', {
     }
 })
 
-const Admins = Users.define('Admin', {
+const Admins = DataBase.define('Admin', {
     CI: {
         type: DataTypes.NUMBER,
         primaryKey: true
@@ -41,7 +37,7 @@ const Admins = Users.define('Admin', {
 })
 
 // Sync the model with the database
-Users.sync()
+DataBase.sync()
     .then(() => {
         console.log('Users table has been created.');
         // Create two users for testing
@@ -73,4 +69,4 @@ Admins.create({
         console.error('Error creating Users table:', error);
     });
 
-export { Users, User, Admins };
+export {  User, Admins };

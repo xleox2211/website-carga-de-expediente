@@ -13,3 +13,20 @@ interface User {
     email: string;
     phone: string;
 }
+
+interface Expediente {
+  CI: number;
+  nombre: string;
+  profesor: string;
+  fechaCreacion: string;
+  fechaModificacion: string;
+  carrera: string;
+}
+
+interface File {
+    id: number;
+    expedienteCI: number;
+    filename: string;
+    fileExtension: string;
+    fileSize: number;
+}
