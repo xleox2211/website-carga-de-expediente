@@ -76,3 +76,5 @@ DataBase.sync()
     .catch((error) => {
         console.error('Error creating tables:', error);
     });
+
+export { Expediente, Files };

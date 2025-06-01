@@ -1,8 +1,8 @@
-import { request, response } from "express";
+import { request, response as expressResponse } from "express";
 import {User} from "../models/Users";
 
 
-const createUser = (req = request, res = response) => {
+const createUser = (req = request, res = expressResponse) : void => {
     // Lógica para crear usuario
     const newUser: User = req.body;
 
@@ -13,7 +13,8 @@ const createUser = (req = request, res = response) => {
             message: 'Datos de usuario inválidos',
             error: 'Invalid user data'
         };
-        return res.status(400).json(response);
+        res.status(400).json(response);
+        return 
     }
 
     User.create(newUser as any)
@@ -33,12 +34,10 @@ const createUser = (req = request, res = response) => {
             };
             res.status(500).json(response);
         });
-
-    res.json(response);
 };
 
-const updateUser = (req = request, res = response) => {
-    
+const updateUser = (req = request, res = expressResponse): void => {
+
     const UserData: User = req.body;
 
     // Validación del usuario
@@ -48,9 +47,10 @@ const updateUser = (req = request, res = response) => {
             message: 'Datos de usuario inválidos',
             error: 'Invalid user data'
         };
-        return res.status(400).json(response);
+        res.status(400).json(response);
+        return ;
     }
-
+    // Validación del CI
     User.update(UserData as any, {
         where: {
             CI: UserData.CI
@@ -76,7 +76,7 @@ const updateUser = (req = request, res = response) => {
     res.json({ message: 'Usuario actualizado' });
 };
 
-const deleteUser = (req = request, res = response) => {
+const deleteUser = (req = request, res = expressResponse): void => {
     const { CI } = req.params;
 
     // Validación del CI
@@ -86,7 +86,8 @@ const deleteUser = (req = request, res = response) => {
             message: 'CI inválido',
             error: 'Invalid CI'
         };
-        return res.status(400).json(response);
+        res.status(400).json(response);
+        return;
     }
 
     User.destroy({
@@ -103,17 +104,18 @@ const deleteUser = (req = request, res = response) => {
     res.json(response);
 };
 
-const loginUser = (req = request, res = response) => {
+const loginUser = (req = request, res = expressResponse): void => {
     const { user, password } = req.body;
 
     // Validación de los datos de inicio de sesión
     if (!user || !password) {
-        const response: responseData = {
+        const responseDataObj: responseData = {
             status: 400,
             message: 'Datos de inicio de sesión inválidos',
             error: 'Invalid login data'
         };
-        return res.status(400).json(response);
+        res.status(400).json(responseDataObj);
+        return;
     }
 
     User.findOne({
@@ -129,7 +131,8 @@ const loginUser = (req = request, res = response) => {
                 error: 'Invalid username or password',
                 data: false
             };
-            return res.status(401).json(response);
+            res.status(401).json(response);
+            return;
         }
 
         const response: responseData = {

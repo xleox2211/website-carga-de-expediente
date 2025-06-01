@@ -1,6 +1,7 @@
-const UserRouter = require('express').Router();
+import { Router } from 'express';
 import { createUser, updateUser, deleteUser, loginUser } from '../controllers/user.controller';
-import User from '../models/Users';
+
+const UserRouter = Router();
 
 UserRouter.post('/create', createUser);
 UserRouter.put('/update', updateUser);
