@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { getExpedientes, addExpediente, deleteExpediente } from "../ExpedienteManage";
-import AuthChecker from "../components/authChecker";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BG from "../components/Bg";
@@ -46,7 +45,6 @@ function DashboardPage() {
   return (
     <BG>
       <Header />
-      <AuthChecker />
       <main className="flex flex-col mx-auto px-4 align-middle w-[65%] min-h-[calc(100vh-70px*2)] ">
         <div className="h-full w-full m-5 bg-white p-5 rounded-lg shadow-md flex flex-col gap-4">
           <div className="overflow-auto">

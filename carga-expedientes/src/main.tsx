@@ -1,9 +1,10 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { AuthProvider } from './userContext'
-import './index.css'
-import LoginPage from './pages/PageLogin'
-import DashboardPage from './pages/PageDashboard'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { AuthProvider } from './userContext';
+import './index.css';
+import LoginPage from './pages/PageLogin';
+import ProtectedRoute from './components/protectedRout';
+import DashboardPage from './pages/PageDashboard';
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 
 const router = createBrowserRouter([
@@ -13,10 +14,13 @@ const router = createBrowserRouter([
   },
   {
     path: "/dashboard",
-    element: <DashboardPage />,
+    element: (
+      <ProtectedRoute>
+        <DashboardPage />
+      </ProtectedRoute>
+    )
   }
 ]);
-
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -24,4 +28,4 @@ createRoot(document.getElementById('root')!).render(
       <RouterProvider router={router} />
     </AuthProvider>
   </StrictMode>,
-)
+);

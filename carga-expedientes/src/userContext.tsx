@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, ReactNode, use } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 import { userLogin } from './UserManage';
+import localData from './localdataManage';
 
 type User = any; // Replace 'any' with your user type if available
 
@@ -8,6 +9,7 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
   setIsAuthenticated: (value: boolean) => void;
 }
 
@@ -15,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   login: async () => {},
   logout: () => {},
+  setUser: () => {},
   isAuthenticated: false,
   setIsAuthenticated: () => {}
 });
@@ -24,8 +27,8 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(localData.getUser() || null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(!!localData.getUser());
   
   const login = async (user: string, password: string) => {
     const userData = await userLogin(user, password);
@@ -36,15 +39,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     setUser(userData.data);
     setIsAuthenticated(true);
+    localData.setUser(userData.data); // Store user data in local storage
   };
   
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    localData.setUser(null); // Clear user data from local storage
   };
   
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, setIsAuthenticated }}>
+    <AuthContext.Provider value={{ user, login, logout, isAuthenticated, setIsAuthenticated, setUser }}>
       {children}
     </AuthContext.Provider>
   );
