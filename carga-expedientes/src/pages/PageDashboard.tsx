@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getExpedientes, addExpediente, deleteExpediente } from "../ExpedienteManage";
 import AuthChecker from "../components/authChecker";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -9,36 +10,38 @@ import AddExpedienteDialog from "../components/addExpedienteDialog";
 
 function DashboardPage() {
   const [isOpen, setIsOpen] = useState(false);
-  const [expedientes, setExpedientes] = useState<Expediente[]>([
-    {
-      CI: 123456789,
-      nombre: "Juan Perez",
-      profesor: "Prof. Roberto Acosta",
-      fechaCreacion: "2023-10-01",
-      fechaModificacion: "2023-10-01 22:00:00",
-      carrera: "Ingeniería de Sistemas",
-    },
-    {
-      CI: 123456789,
-      nombre: "Juan Perez",
-      profesor: "Roberto Acosta",
-      fechaCreacion: "2023-10-01",
-      fechaModificacion: "2023-10-01 22:00:00",
-      carrera: "Ingeniería de Sistemas",
-    },
-    {
-      CI: 123456789,
-      nombre: "Juan Perez",
-      profesor: "Roberto Acosta",
-      fechaCreacion: "2023-10-01",
-      fechaModificacion: "2023-10-01 22:00:00",
-      carrera: "Ingeniería de Sistemas",
-    }
-  ]);
+  const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   
-  function addExpediente(expediente: Expediente) {
-    setExpedientes([...expedientes, expediente]);
+  function AddExpediente(expediente: Expediente) {
+    addExpediente(expediente)
+    fetchData();
+    setIsOpen(false);
   }
+
+  function handleDeleteExpediente(CI: number) {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este expediente?")) {
+      deleteExpediente(CI)
+        .then(() => {
+          fetchData();
+        })
+        .catch((error) => {
+          console.error("Error al eliminar el expediente:", error);
+          alert("Error al eliminar el expediente. Por favor, inténtalo de nuevo.");
+        });
+    }
+  }
+
+  async function fetchData() {
+    const data = await getExpedientes(1, 10);
+    console.log(data);
+    setExpedientes(data);
+  }
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+
 
   return (
     <BG>
@@ -63,9 +66,11 @@ function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
+                
                 {
                   expedientes.map((expediente, index) => (
                     <ExpedienteItem
+                      deleteFunction={handleDeleteExpediente}
                       key={index}
                       {...expediente}
                     />
@@ -84,7 +89,7 @@ function DashboardPage() {
             </div>
           </div>
         </div>
-      <AddExpedienteDialog isOpen={isOpen} setOpen={setIsOpen} expedientFunction={addExpediente}/>
+      <AddExpedienteDialog isOpen={isOpen} setOpen={setIsOpen} expedientFunction={AddExpediente}/>
       </main>
       <Footer />
     </BG>

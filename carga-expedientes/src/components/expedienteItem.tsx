@@ -5,9 +5,10 @@ interface ExpedienteItemProps {
     fechaCreacion: string;
     fechaModificacion: string;
     carrera: string;
+    deleteFunction?: (CI: number) => void;
 }
 
-function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion, carrera}: ExpedienteItemProps)
+function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion, carrera, deleteFunction}: ExpedienteItemProps)
 {
 
     return (
@@ -33,7 +34,7 @@ function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion,
                         <button className="bg-green-500 text-white px-4 py-2 hover:bg-green-600 transition duration-200 w-14">
                           Ver
                         </button>
-                        <button className="bg-red-500 text-white px-4 py-2 rounded-r-md hover:bg-red-600 transition duration-200 w-20">
+                        <button onClick={() => deleteFunction?.(CI)} className="bg-red-500 text-white px-4 py-2 rounded-r-md hover:bg-red-600 transition duration-200 w-20">
                           Eliminar
                         </button>
                         </div>
