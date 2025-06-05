@@ -307,9 +307,35 @@ function getExpedienteInList(req: Request, res: Response) {
         });
 }
 
+async function getAvaibleExpedienteList(req: Request, res: Response) {
+    const pageSize: number = Number(req.params.pageSize) || 10;
+    
+    const expedientes = await Expediente.findAll();
+    
+    if (!expedientes || expedientes.length === 0) {
+        const response: responseData = {
+            status: 404,
+            message: 'No hay expedientes disponibles',
+            error: 'No expedientes found'
+        };
+        res.status(404).json(response);
+        return;
+    }
+
+    const expedienteCount = expedientes.length;
+    const totalPages = Math.ceil(expedienteCount / pageSize);
+    const response: responseData = {
+        status: 200,
+        message: 'Lista de expedientes obtenida exitosamente',
+        data: totalPages
+    };
+    res.status(200).json(response);
+}
+
 export {
     createExpediente,
     updateExpediente,
     deleteExpediente,
-    getExpedienteInList
+    getExpedienteInList,
+    getAvaibleExpedienteList
 };
