@@ -1,5 +1,5 @@
 import { request, response as expressResponse } from "express";
-import {User} from "../models/Users";
+import {User, Admins} from "../models/Users";
 
 
 const createUser = (req = request, res = expressResponse) : void => {
@@ -144,6 +144,95 @@ const loginUser = (req = request, res = expressResponse): void => {
     })
 };
 
+async function upgradeUser(req = request, res = expressResponse): Promise<void> {
+    const { CI: toUpgrade } = req.params;
+
+    const user = await User.findOne({
+        where: {
+            CI: toUpgrade
+        }});
+
+    if (!user) {
+        const response: responseData = {
+            status: 404,
+            message: 'Usuario no encontrado',
+            error: 'User not found'
+        };
+        res.status(404).json(response);
+        return;
+    }
+
+    const adminExists = await Admins.findOne({
+        where: {
+            CI: toUpgrade
+        }});
+    
+    if (adminExists) {
+        const response: responseData = {
+            status: 400,
+            message: 'El usuario ya es un administrador',
+            error: 'User is already an admin'
+        };
+        res.status(400).json(response);
+        return;
+    }
+
+    const newAdmin = await Admins.create({
+        where: {
+            CI: toUpgrade
+        }
+    });
+
+    if (!newAdmin) {
+        const response: responseData = {
+            status: 500,
+            message: 'Error al promover el usuario a administrador',
+            error: 'Failed to promote user to admin'
+        };
+        res.status(500).json(response);
+        return;
+    }
+
+    const response: responseData = {
+        status: 200,
+        message: 'Usuario promovido a administrador exitosamente',
+        data: newAdmin
+    };
+    res.status(200).json(response);
+}
+
+async function downgradeUser(req = request, res = expressResponse): Promise<void> {
+    const { CI: toDowngrade } = req.params;
+    const admin = await Admins.findOne({
+        where: {
+            CI: toDowngrade
+        }});
+    
+    if (!admin) {
+        const response: responseData = {
+            status: 404,
+            message: 'Administrador no encontrado',
+            error: 'Admin not found'
+        };
+        res.status(404).json(response);
+        return;
+    }
+
+    await Admins.destroy({
+        where: {
+            CI: toDowngrade
+        }
+    });
+
+    const response: responseData = {
+        status: 200,
+        message: 'Administrador degradado a usuario exitosamente',
+        data: null
+    };
+
+    res.status(200).json(response);
+}
+
 function userValidation(toValid : User) : boolean {
     if (!toValid || !toValid.name || !toValid.email || !toValid.password || !toValid.CI || !toValid.phone || !toValid.user) {
         return false;
@@ -165,5 +254,7 @@ export {
     createUser,
     updateUser,
     deleteUser,
-    loginUser
+    loginUser,
+    upgradeUser,
+    downgradeUser,
 };

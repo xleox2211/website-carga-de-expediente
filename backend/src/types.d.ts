@@ -23,10 +23,15 @@ interface Expediente {
   carrera: string;
 }
 
-interface File {
+interface ExpedienteFile {
     id: number;
     expedienteCI: number;
     filename: string;
     fileExtension: string;
     fileSize: number;
+}
+
+interface fileRequest extends Request {
+    expedienteCI?: number;
+    files?: any[];
 }

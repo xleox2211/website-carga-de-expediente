@@ -1,5 +1,7 @@
 import { type Request, type Response } from "express";
-import { Expediente } from "../models/Expedientes";
+import { Expediente, Files } from "../models/Expedientes";
+import path from "node:path"
+import { deleteFile } from "../filesManager";
 
 function expedienteValidation(expediente: Expediente): boolean {
     // Aquí puedes agregar la lógica de validación para el expediente
@@ -11,6 +13,7 @@ function expedienteValidation(expediente: Expediente): boolean {
 
 function createExpediente(req : Request, res : Response): void {
     const newExpediente: Expediente = req.body;
+    console.log('Nuevo expediente recibido:', newExpediente);
 
     // Validación del expediente
     if (!expedienteValidation(newExpediente)) {
@@ -23,8 +26,70 @@ function createExpediente(req : Request, res : Response): void {
         return;
     }
 
-    Expediente.create(newExpediente as any)
+    Expediente.create({
+        CI: newExpediente.CI,
+        nombre: newExpediente.nombre,
+        profesor: newExpediente.profesor,
+        carrera: newExpediente.carrera,
+        fechaCreacion: newExpediente.fechaCreacion || new Date(),
+        fechaModificacion: newExpediente.fechaModificacion || new Date()
+    } as any)
         .then((expediente: any) => {
+            // Si la creacion del expediente es exitosa, ahora creamos los archivos asociados
+            let archivos: any[] = [];
+            if (Array.isArray(req.files)) {
+                archivos = req.files;
+            } else if (req.files && typeof req.files === 'object') {
+                archivos = Object.values(req.files).flat();
+            }
+
+            if (archivos.length === 0) {
+                Expediente.destroy({
+                    where: { CI: newExpediente.CI }
+                });
+                // Si no hay archivos asociados, respondemos con un error
+                const response: responseData = {
+                    status: 501,
+                    message: 'el expediente fue credo sin archivos asociados por lo que no se puede crear el expediente',
+                    error: 'No files associated with the expediente',
+                    data: newExpediente
+                };
+                res.status(201).json(response);
+                return;
+            }
+
+            for (const archivo of archivos) {
+                const expedienteFile: ExpedienteFile = {
+                    id: 0, // ID se autogenera
+                    expedienteCI: newExpediente.CI,
+                    fileExtension: path.extname(archivo.originalname).substring(1), // Obtenemos la extensión del archivo
+                    filename: archivo.originalname,
+                    fileSize: archivo.size,
+                };
+
+                Files.create(
+                    { ...expedienteFile}                  
+                )
+                .then(() => {
+                    console.log(`Archivo ${archivo.originalname} asociado al expediente ${newExpediente.CI}`);
+                })
+                .catch((error: { message: any; }) => {
+                    console.error(`Error al asociar el archivo ${archivo.originalname} al expediente ${newExpediente.CI}:`, error.message);
+                    // Si ocurre un error al crear el archivo, eliminamos el expediente
+                    Expediente.destroy({
+                        where: { CI: newExpediente.CI }
+                    });
+                    const response: responseData = {
+                        status: 500,
+                        message: 'Error al asociar archivos al expediente',
+                        error: error.message
+                    };
+                    res.status(500).json(response);
+                });
+            }
+                    
+                
+
             const response: responseData = {
                 status: 201,
                 message: 'Expediente creado exitosamente',
@@ -70,6 +135,75 @@ function updateExpediente(req: Request, res: Response): void {
         where: { CI: CI }
     })
         .then(() => {
+            // Eliminamos los archivos asociados al expediente
+
+            Files.findAll({
+                where: { expedienteCI: CI }
+            })
+            .then((files: any[]) => {
+                if (files.length > 0) {
+                    for (const file of files) {
+                        // Eliminamos el archivo del sistema de archivos
+                        deleteFile(file.filename)
+                            .then(() => {
+                                console.log(`Archivo ${file.filename} eliminado exitosamente`);
+                            })
+                            .catch((error: { message: any; }) => {
+                                console.error(`Error al eliminar el archivo ${file.filename}:`, error.message);
+                            });
+                    }
+                }
+                // Eliminamos los registros de archivos asociados al expediente
+                Files.destroy({
+                    where: { expedienteCI: CI }
+                });
+
+                // Ahora creamos los nuevos archivos asociados
+                let archivos: any[] = [];
+                if (Array.isArray(req.files)) {
+                    archivos = req.files;
+                } else if (req.files && typeof req.files === 'object') {
+                    archivos = Object.values(req.files).flat();
+                }
+
+                if (archivos.length === 0) {
+                    const response: responseData = {
+                        status: 501,
+                        message: 'El expediente fue actualizado sin archivos asociados',
+                        error: 'No files associated with the expediente',
+                        data: expedienteData
+                    };
+                    res.status(201).json(response);
+                    return;
+                }
+
+                for (const archivo of archivos) {
+                    const expedienteFile: ExpedienteFile = {
+                        id: 0, // ID se autogenera
+                        expedienteCI: CI,
+                        fileExtension: path.extname(archivo.originalname).substring(1), // Obtenemos la extensión del archivo
+                        filename: archivo.originalname,
+                        fileSize: archivo.size,
+                    };
+
+                    Files.create(
+                        { ...expedienteFile }
+                    )
+                    .then(() => {
+                        console.log(`Archivo ${archivo.originalname} asociado al expediente ${CI}`);
+                    })
+                    .catch((error: { message: any; }) => {
+                        console.error(`Error al asociar el archivo ${archivo.originalname} al expediente ${CI}:`, error.message);
+                        const response: responseData = {
+                            status: 500,
+                            message: 'Error al asociar archivos al expediente',
+                            error: error.message
+                        };
+                        res.status(500).json(response);
+                    });
+                }
+            })
+
             const response: responseData = {
                 status: 200,
                 message: 'Expediente actualizado exitosamente'
@@ -101,6 +235,29 @@ function deleteExpediente(req: Request, res: Response): void {
         where: { CI: CI }
     })
         .then(() => {
+            // Eliminamos los archivos asociados al expediente
+            Files.findAll({
+                where: { expedienteCI: CI }
+            })
+            .then((files: any[]) => {
+                if (files.length > 0) {
+                    for (const file of files) {
+                        // Eliminamos el archivo del sistema de archivos
+                        deleteFile(file.filename)
+                            .then(() => {
+                                console.log(`Archivo ${file.filename} eliminado exitosamente`);
+                            })
+                            .catch((error: { message: any; }) => {
+                                console.error(`Error al eliminar el archivo ${file.filename}:`, error.message);
+                            });
+                    }
+                }
+                // Eliminamos los registros de archivos asociados al expediente
+                Files.destroy({
+                    where: { expedienteCI: CI }
+                });
+            });
+
             const response: responseData = {
                 status: 200,
                 message: 'Expediente eliminado exitosamente'
