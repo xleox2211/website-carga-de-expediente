@@ -28,7 +28,7 @@ const Expediente = DataBase.define('Expediente', {
     }
 });
 
-const Files = DataBase.define('File', {
+const FileModel = DataBase.define('File', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -46,6 +46,10 @@ const Files = DataBase.define('File', {
         type: DataTypes.STRING,
         allowNull: false
     },
+    originalName: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     fileExtension: {
         type: DataTypes.STRING,
         allowNull: false
@@ -57,13 +61,13 @@ const Files = DataBase.define('File', {
 });
 
 // a expediente can have many files
-Expediente.hasMany(Files, {
+Expediente.hasMany(FileModel, {
     foreignKey: 'expedienteCI',
     sourceKey: 'CI'
 });
 
 // a file belongs to a expediente
-Files.belongsTo(Expediente, {
+FileModel.belongsTo(Expediente, {
     foreignKey: 'expedienteCI',
     targetKey: 'CI'
 });
@@ -77,4 +81,4 @@ DataBase.sync()
         console.error('Error creating tables:', error);
     });
 
-export { Expediente, Files };
+export { Expediente, FileModel };

@@ -1,15 +1,18 @@
 import { useState } from "react";
 import BlueButton from "./BlueButton";
+import { useAuth } from "../userContext";
+import FloatDialog from "./FloatDialog";
 
 interface ExpedientDialogProps
 {
     isOpen: boolean;
     setOpen: (open: boolean) => void;
-    expedientFunction?: (as : Expediente) => void;
+    expedientFunction?: (as : FormData) => void;
 }
 
 function AddExpedienteDialog({isOpen, setOpen, expedientFunction} : ExpedientDialogProps)
 {
+    const { user } = useAuth();
     const [CI, setCI] = useState("");
     const [Name, setName] = useState("");
     const [Prof, setProf] = useState("");
@@ -40,77 +43,60 @@ function AddExpedienteDialog({isOpen, setOpen, expedientFunction} : ExpedientDia
         }
     }
 
-    function AddExpediente()
+    function AddExpediente(event: React.FormEvent<HTMLFormElement>)
     {
-        const Expediente : Expediente = {
-            CI: Number(CI),
-            nombre: Name,
-            profesor: Prof,
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+
+        formData.append("profesor", user.name);
+        formData.append("fechaCreacion", new Date().toISOString());
+        formData.append("fechaModificacion", new Date().toISOString());
+
+        const files = formData.getAll("files") as File[];
+        const expediente: Expediente = {
+            CI: Number(formData.get("CI")) as number,
+            nombre: formData.get("nombre") as string,
+            carrera: formData.get("carrera") as string,
+            profesor: user.name,
             fechaCreacion: new Date().toISOString(),
             fechaModificacion: new Date().toISOString(),
-            carrera: Carr
-        }
+        };
 
-        if (CI === "" || Name === "" || Prof === "" || Carr === "")
+        if (files.length === 0 || expediente.CI === 0 || expediente.nombre === "" || expediente.carrera === "")
         {
-            setErrorMSG("Todos los campos son obligatorios.");
+            setErrorMSG("Por favor, completa todos los campos y selecciona al menos un archivo.");
             return;
         }
 
-        if (CI.length !== 8)
+        if (files.length > 5)
         {
-            setErrorMSG("La CI debe tener 8 dígitos.");
+            setErrorMSG("No se pueden agregar más de 5 archivos.");
             return;
         }
 
-        if (isNaN(Number(CI)))
-        {
-            setErrorMSG("La CI debe ser un número válido.");
-            return;
-        }
 
         if (expedientFunction)
         {
-            expedientFunction(Expediente);
+            expedientFunction(formData);
         }
-        else
-        {
-            console.error("No se ha proporcionado una función para manejar el expediente.");
-            setErrorMSG("Error al agregar el expediente.");
-        }
-
-        setOpen(false);
-        setCI("");
-        setName("");
-        setProf("");
-        setCarr("");
         setErrorMSG("");
     }
 
-    if (!isOpen)
-    {
-        return null
-    }
-
     return(
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm`}>
-    <dialog
-      id="modal-agregar-expediente"
-      className="relative bg-white rounded-lg shadow-lg p-8 w-full max-w-md"
-      open={true}
-    >
-      <div className="flex flex-col gap-4">
+    <FloatDialog isOpen={isOpen} setOpen={setOpen}>
         <h3 className="font-bold text-lg mb-2">Agregar Expediente</h3>
-        <input id="InCI" type="text" placeholder="CI" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-        <input id="InName" type="text" placeholder="Nombre" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-        <input id="InProf" type="text" placeholder="Profesor" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-        <input id="InCarr" type="text" placeholder="Carrera" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-        <p className="text-red-300 decoration-0 underline">{ErrorMSG}</p>
-        <BlueButton onClick={AddExpediente}>Agregar</BlueButton>
-      </div>
-    </dialog>
-  </div>
-    )
+        <form className="flex flex-col gap-2" onSubmit={(e) => {
+            AddExpediente(e as React.FormEvent<HTMLFormElement>);
+        }}>
+            <input name="CI"	  type="text" placeholder="CI" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input name="nombre"  type="text" placeholder="Nombre" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input name="carrera" type="text" placeholder="Carrera" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input type="file" name="files" multiple className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" accept=".png, .jpg, .jpeg, .pdf, .doc, .docx, .sxl, .xlsx" />
+            <p className="text-red-300 decoration-0 underline">{ErrorMSG}</p>
+            <BlueButton type="submit">Agregar</BlueButton>
+        </form>
+    </FloatDialog>
+  )
 }
 
 export default AddExpedienteDialog

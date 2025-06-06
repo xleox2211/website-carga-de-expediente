@@ -4,17 +4,39 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BG from "../components/Bg";
 import BlueButton from "../components/BlueButton";
-import ExpedienteItem from "../components/expedienteItem";
+import ExpedienteTable from "../components/ExpedienteTable";
 import AddExpedienteDialog from "../components/addExpedienteDialog";
+import VerExpedienteDialog from "../components/VerExpedienteDialog";
+import Paginador from "../components/Paginador";
 
 function DashboardPage() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isAddExpedienteOpen, setIsAddExpedienteOpen] = useState(false);
+  const [isVerExpedienteOpen, setIsVerExpedienteOpen] = useState(false);
+
+  const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>({
+    CI: 0,
+    nombre: "",
+    carrera: "",
+    profesor: "",
+    fechaCreacion: new Date().toISOString(),
+    fechaModificacion: new Date().toISOString()
+  });
+  
+  const handleViewExpediente = (expediente: Expediente) => {
+    setSelectedExpediente(expediente);
+    setIsVerExpedienteOpen(true);
+  }
+
+  const [updatePageCount, setUpdatePageCount] = useState(false);
+  const [Page, setPage] = useState(1);
+  const [PageSize, setPageSize] = useState(10);
   const [expedientes, setExpedientes] = useState<Expediente[]>([]);
   
-  function AddExpediente(expediente: Expediente) {
-    addExpediente(expediente)
-    fetchData();
-    setIsOpen(false);
+  async function AddExpediente(expediente: FormData) {
+    await addExpediente(expediente);
+    await fetchData();
+    setUpdatePageCount(!updatePageCount);
+    setIsAddExpedienteOpen(false);
   }
 
   function handleDeleteExpediente(CI: number) {
@@ -22,6 +44,7 @@ function DashboardPage() {
       deleteExpediente(CI)
         .then(() => {
           fetchData();
+          setUpdatePageCount(!updatePageCount);
         })
         .catch((error) => {
           console.error("Error al eliminar el expediente:", error);
@@ -31,14 +54,14 @@ function DashboardPage() {
   }
 
   async function fetchData() {
-    const data = await getExpedientes(1, 10);
+    const data = await getExpedientes(Page, PageSize);
     console.log(data);
     setExpedientes(data);
   }
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [Page]);
 
 
 
@@ -47,47 +70,24 @@ function DashboardPage() {
       <Header />
       <main className="flex flex-col mx-auto px-4 align-middle w-[65%] min-h-[calc(100vh-70px*2)] ">
         <div className="h-full w-full m-5 bg-white p-5 rounded-lg shadow-md flex flex-col gap-4">
-          <div className="overflow-auto">
-            {" "}
-            {/* Contenedor para el scroll */}
-            <table className="w-full min-w-[800px]">
-              {" "}
-              {/* Ancho mínimo para evitar compresión */}
-              <thead className="bg-gray-200 sticky top-0 z-10">
-                <tr className="h-12">
-                  <th className="px-4 text-center">Cedula</th>
-                  <th className="px-4 text-center">Alumno</th>
-                  <th className="px-4 text-center">Tutor Académico</th>
-                  <th className="px-4 text-center">Creado / Modificado</th>
-                  <th className="px-4 text-center">Carrera</th>
-                  <th className="px-4 text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                
-                {
-                  expedientes.map((expediente, index) => (
-                    <ExpedienteItem
-                      deleteFunction={handleDeleteExpediente}
-                      key={index}
-                      {...expediente}
-                    />
-                  ))
-                }
-              </tbody>
-            </table>
+          <div className="flex items-center row">
+            <Paginador currentPage={Page} setPage={setPage} pageSize={PageSize} updatePageCount={updatePageCount} />
+           <div className="flex-1 text-center">
+             <div className="overflow-auto">
+           <ExpedienteTable expedientes={expedientes} onDelete={handleDeleteExpediente} onView={handleViewExpediente} />
           </div>
           <div className="sticky bottom-0 bg-white pt-4">
-            {" "}
-            {/* Pie fuera de la tabla */}
             <div className="flex justify-center">
-              <BlueButton onClick={() => setIsOpen(true)} >
+              <BlueButton onClick={() => setIsAddExpedienteOpen(true)} >
                 Agregar Expediente
               </BlueButton>
             </div>
           </div>
+           </div>
+          </div>
         </div>
-      <AddExpedienteDialog isOpen={isOpen} setOpen={setIsOpen} expedientFunction={AddExpediente}/>
+      <AddExpedienteDialog isOpen={isAddExpedienteOpen} setOpen={setIsAddExpedienteOpen} expedientFunction={AddExpediente}/>
+      <VerExpedienteDialog isOpen={isVerExpedienteOpen} setOpen={setIsVerExpedienteOpen} expedient={selectedExpediente}/>
       </main>
       <Footer />
     </BG>

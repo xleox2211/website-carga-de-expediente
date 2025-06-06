@@ -1,335 +1,258 @@
 import { type Request, type Response } from "express";
-import { Expediente, Files } from "../models/Expedientes";
+import { Expediente, FileModel } from "../models/Expedientes";
 import path from "node:path"
 import { deleteFile } from "../filesManager";
 
-function expedienteValidation(expediente: Expediente): boolean {
-    // Aquí puedes agregar la lógica de validación para el expediente
-    if (!expediente.CI || !expediente.nombre || !expediente.profesor || !expediente.carrera) {
-        return false;
-    }
-    return true;
-}
+async function createExpediente(req: Request, res: Response): Promise<void> {
+    const expedienteData = req.body;
+    const files: Express.Multer.File[] = Array.isArray(req.files) ? req.files : [];
 
-function createExpediente(req : Request, res : Response): void {
-    const newExpediente: Expediente = req.body;
-    console.log('Nuevo expediente recibido:', newExpediente);
-
-    // Validación del expediente
-    if (!expedienteValidation(newExpediente)) {
-        const response: responseData = {
-            status: 400,
-            message: 'Datos de expediente inválidos',
-            error: 'Invalid expediente data'
-        };
-        res.status(400).json(response);
-        return;
-    }
-
-    Expediente.create({
-        CI: newExpediente.CI,
-        nombre: newExpediente.nombre,
-        profesor: newExpediente.profesor,
-        carrera: newExpediente.carrera,
-        fechaCreacion: newExpediente.fechaCreacion || new Date(),
-        fechaModificacion: newExpediente.fechaModificacion || new Date()
-    } as any)
-        .then((expediente: any) => {
-            // Si la creacion del expediente es exitosa, ahora creamos los archivos asociados
-            let archivos: any[] = [];
-            if (Array.isArray(req.files)) {
-                archivos = req.files;
-            } else if (req.files && typeof req.files === 'object') {
-                archivos = Object.values(req.files).flat();
+    try {
+        const expedienteQuery = await Expediente.create(
+            {
+                CI: expedienteData.CI,
+                nombre: expedienteData.nombre,
+                profesor: expedienteData.profesor,
+                fechaCreacion: new Date(),
+                fechaModificacion: new Date(),
+                carrera: expedienteData.carrera
             }
+        )
 
-            if (archivos.length === 0) {
-                Expediente.destroy({
-                    where: { CI: newExpediente.CI }
-                });
-                // Si no hay archivos asociados, respondemos con un error
-                const response: responseData = {
-                    status: 501,
-                    message: 'el expediente fue credo sin archivos asociados por lo que no se puede crear el expediente',
-                    error: 'No files associated with the expediente',
-                    data: newExpediente
-                };
-                res.status(201).json(response);
-                return;
+    if (expedienteQuery){
+        // Create file entries for each uploaded file
+        const fileEntries = files.map(file => ({
+            expedienteCI: expedienteData.CI,
+            filename: file.filename,
+            fileExtension: path.extname(file.originalname),
+            fileSize: file.size,
+            originalName: file.originalname
+        }));
+
+        await FileModel.bulkCreate(fileEntries)
+        console.log("Expediente created successfully with files:", fileEntries);
+        res.status(201).json({
+            message: "Expediente created successfully",
+            expediente: expedienteQuery,
+            files: fileEntries
+        });
+    }
+    }
+    catch (error) {
+        console.error("Error creating expediente:", error);
+        res.status(500).json({ error: "Failed to create expediente" });
+        return;
+    }
+}
+
+async function updateExpediente(req: Request, res: Response): Promise<void> {
+    const expedienteId = req.params.CI;
+    console.log(`Updating expediente with ID ${expedienteId}`);
+    const expedienteData = req.body;
+    const files: Express.Multer.File[] = Array.isArray(req.files) ? req.files : [];
+
+    try {
+        const expedienteQuery = await Expediente.update(
+            {
+                CI: expedienteData.CI,
+                nombre: expedienteData.nombre,
+                profesor: expedienteData.profesor,
+                fechaModificacion: new Date(),
+                carrera: expedienteData.carrera
+            },
+            {
+                where: {
+                    CI: expedienteId
+                }
             }
+        );
 
-            for (const archivo of archivos) {
-                const expedienteFile: ExpedienteFile = {
-                    id: 0, // ID se autogenera
-                    expedienteCI: newExpediente.CI,
-                    fileExtension: path.extname(archivo.originalname).substring(1), // Obtenemos la extensión del archivo
-                    filename: archivo.originalname,
-                    fileSize: archivo.size,
-                };
+        if (!expedienteQuery[0]) {
+            res.status(404).json({ error: "Expediente not found" });
+            return;
+        }
 
-                Files.create(
-                    { ...expedienteFile}                  
-                )
-                .then(() => {
-                    console.log(`Archivo ${archivo.originalname} asociado al expediente ${newExpediente.CI}`);
-                })
-                .catch((error: { message: any; }) => {
-                    console.error(`Error al asociar el archivo ${archivo.originalname} al expediente ${newExpediente.CI}:`, error.message);
-                    // Si ocurre un error al crear el archivo, eliminamos el expediente
-                    Expediente.destroy({
-                        where: { CI: newExpediente.CI }
-                    });
-                    const response: responseData = {
-                        status: 500,
-                        message: 'Error al asociar archivos al expediente',
-                        error: error.message
-                    };
-                    res.status(500).json(response);
-                });
-            }
-                    
-                
+        // Delete existing files from the database and filesystem
+        const existingFiles = await FileModel.findAll({ where: { expedienteCI: expedienteId } });
 
-            const response: responseData = {
-                status: 201,
-                message: 'Expediente creado exitosamente',
-                data: expediente
-            };
-            res.status(201).json(response);
-        })
-        .catch((error: { message: any; }) => {
-            const response: responseData = {
-                status: 500,
-                message: 'Error al crear el expediente',
-                error: error.message
-            };
-            res.status(500).json(response);
+        for (const file of existingFiles) {
+            await deleteFile(file.getDataValue('filename'));
+            await FileModel.destroy({ where: { id: file.getDataValue('id') } });
+        }
+
+        // Create new file entries for each uploaded file
+        const fileEntries = files.map(file => ({
+            expedienteCI: expedienteId,
+            filename: file.filename,
+            fileExtension: path.extname(file.originalname),
+            fileSize: file.size,
+            originalName: file.originalname
+        }));
+
+        await FileModel.bulkCreate(fileEntries);
+
+        console.log("Expediente updated successfully with files:", fileEntries);
+        res.status(200).json({
+            message: "Expediente updated successfully",
+            expediente: expedienteData,
+            files: fileEntries
         });
-}
-
-function updateExpediente(req: Request, res: Response): void {
-    const CI: number = Number(req.params.CI);
-    if (!CI) {
-        const response: responseData = {
-            status: 400,
-            message: 'Datos de expediente inválidos',
-            error: 'Invalid expediente data'
-        };
-        res.status(400).json(response);
+    }
+    catch (error) {
+        console.error("Error updating expediente:", error);
+        res.status(500).json({ error: "Failed to update expediente" });
         return;
     }
-    const expedienteData: Expediente = req.body;
-
-    // Validación del expediente
-    if (!expedienteValidation(expedienteData)) {
-        const response: responseData = {
-            status: 400,
-            message: 'Datos de expediente inválidos',
-            error: 'Invalid expediente data'
-        };
-        res.status(400).json(response);
-        return;
-    }
-
-    Expediente.update(expedienteData, {
-        where: { CI: CI }
-    })
-        .then(() => {
-            // Eliminamos los archivos asociados al expediente
-
-            Files.findAll({
-                where: { expedienteCI: CI }
-            })
-            .then((files: any[]) => {
-                if (files.length > 0) {
-                    for (const file of files) {
-                        // Eliminamos el archivo del sistema de archivos
-                        deleteFile(file.filename)
-                            .then(() => {
-                                console.log(`Archivo ${file.filename} eliminado exitosamente`);
-                            })
-                            .catch((error: { message: any; }) => {
-                                console.error(`Error al eliminar el archivo ${file.filename}:`, error.message);
-                            });
-                    }
-                }
-                // Eliminamos los registros de archivos asociados al expediente
-                Files.destroy({
-                    where: { expedienteCI: CI }
-                });
-
-                // Ahora creamos los nuevos archivos asociados
-                let archivos: any[] = [];
-                if (Array.isArray(req.files)) {
-                    archivos = req.files;
-                } else if (req.files && typeof req.files === 'object') {
-                    archivos = Object.values(req.files).flat();
-                }
-
-                if (archivos.length === 0) {
-                    const response: responseData = {
-                        status: 501,
-                        message: 'El expediente fue actualizado sin archivos asociados',
-                        error: 'No files associated with the expediente',
-                        data: expedienteData
-                    };
-                    res.status(201).json(response);
-                    return;
-                }
-
-                for (const archivo of archivos) {
-                    const expedienteFile: ExpedienteFile = {
-                        id: 0, // ID se autogenera
-                        expedienteCI: CI,
-                        fileExtension: path.extname(archivo.originalname).substring(1), // Obtenemos la extensión del archivo
-                        filename: archivo.originalname,
-                        fileSize: archivo.size,
-                    };
-
-                    Files.create(
-                        { ...expedienteFile }
-                    )
-                    .then(() => {
-                        console.log(`Archivo ${archivo.originalname} asociado al expediente ${CI}`);
-                    })
-                    .catch((error: { message: any; }) => {
-                        console.error(`Error al asociar el archivo ${archivo.originalname} al expediente ${CI}:`, error.message);
-                        const response: responseData = {
-                            status: 500,
-                            message: 'Error al asociar archivos al expediente',
-                            error: error.message
-                        };
-                        res.status(500).json(response);
-                    });
-                }
-            })
-
-            const response: responseData = {
-                status: 200,
-                message: 'Expediente actualizado exitosamente'
-            };
-            res.status(200).json(response);
-        })
-        .catch((error: { message: any; }) => {
-            const response: responseData = {
-                status: 500,
-                message: 'Error al actualizar el expediente',
-                error: error.message
-            };
-            res.status(500).json(response);
-        });
-}
-function deleteExpediente(req: Request, res: Response): void {
-    const CI: number = Number(req.params.CI);
-    if (!CI) {
-        const response: responseData = {
-            status: 400,
-            message: 'Datos de expediente inválidos',
-            error: 'Invalid expediente data'
-        };
-        res.status(400).json(response);
-        return;
-    }
-
-    Expediente.destroy({
-        where: { CI: CI }
-    })
-        .then(() => {
-            // Eliminamos los archivos asociados al expediente
-            Files.findAll({
-                where: { expedienteCI: CI }
-            })
-            .then((files: any[]) => {
-                if (files.length > 0) {
-                    for (const file of files) {
-                        // Eliminamos el archivo del sistema de archivos
-                        deleteFile(file.filename)
-                            .then(() => {
-                                console.log(`Archivo ${file.filename} eliminado exitosamente`);
-                            })
-                            .catch((error: { message: any; }) => {
-                                console.error(`Error al eliminar el archivo ${file.filename}:`, error.message);
-                            });
-                    }
-                }
-                // Eliminamos los registros de archivos asociados al expediente
-                Files.destroy({
-                    where: { expedienteCI: CI }
-                });
-            });
-
-            const response: responseData = {
-                status: 200,
-                message: 'Expediente eliminado exitosamente'
-            };
-            res.status(200).json(response);
-        })
-        .catch((error: { message: any; }) => {
-            const response: responseData = {
-                status: 500,
-                message: 'Error al eliminar el expediente',
-                error: error.message
-            };
-            res.status(500).json(response);
-        });
 }
 
-/*
-Obtiene una lista de expedientes especificando un número de página y un tamaño de página.
-@param {request} req - La solicitud HTTP.
-*/
-function getExpedienteInList(req: Request, res: Response) {
-    const page: number = Number(req.params.page) || 1;
-    const pageSize: number = Number(req.params.pageSize) || 10;
-
-    Expediente.findAndCountAll({
-        limit: pageSize,
-        offset: (page - 1) * pageSize
-    })
-        .then((result: { count: any; rows: any; }) => {
-            const response: responseData = {
-                status: 200,
-                message: 'Lista de expedientes obtenida exitosamente',
-                data: {
-                    totalItems: result.count,
-                    expedientes: result.rows
-                }
-            };
-            res.status(200).json(response);
-        })
-        .catch((error: { message: any; }) => {
-            const response: responseData = {
-                status: 500,
-                message: 'Error al obtener la lista de expedientes',
-                error: error.message
-            };
-            res.status(500).json(response);
-        });
-}
-
-async function getAvaibleExpedienteList(req: Request, res: Response) {
-    const pageSize: number = Number(req.params.pageSize) || 10;
+async function deleteExpediente(req: Request, res: Response): Promise<void> {
+    const expedienteId = req.params.CI;
+    console.log(`Deleting expediente with ID ${expedienteId}`);
     
-    const expedientes = await Expediente.findAll();
-    
-    if (!expedientes || expedientes.length === 0) {
-        const response: responseData = {
-            status: 404,
-            message: 'No hay expedientes disponibles',
-            error: 'No expedientes found'
-        };
-        res.status(404).json(response);
+    try {
+        const expediente = await Expediente.findByPk(expedienteId);
+        if (!expediente) {
+            res.status(404).json({ error: "Expediente not found" });
+            return;
+        }
+
+        // Delete associated files from the database and filesystem
+        const existingFiles = await FileModel.findAll({ where: { expedienteCI: expedienteId } });
+        for (const file of existingFiles) {
+            await deleteFile(file.getDataValue('filename'));
+            await FileModel.destroy({ where: { id: file.getDataValue('id') } });
+        }
+
+        // Delete the expediente
+        await Expediente.destroy({ where: { CI: expedienteId } });
+
+        console.log(`Expediente with ID ${expedienteId} deleted successfully.`);
+        res.status(200).json({ message: "Expediente deleted successfully" });
+    }
+    catch (error) {
+        console.error("Error deleting expediente:", error);
+        res.status(500).json({ error: "Failed to delete expediente" });
         return;
     }
+}
 
-    const expedienteCount = expedientes.length;
+async function getExpedienteInList(req: Request, res: Response): Promise<void> {
+    const pageSize = parseInt(req.params.pageSize as string) || 10;
+    const page = parseInt(req.params.page as string) || 1;
+    console.log(`Getting expediente list with page size ${pageSize} and page ${page}`);
+
+    try {
+        const expedientes = await Expediente.findAll({
+            limit: pageSize,
+            offset: (page - 1) * pageSize
+        });
+        res.status(200).json(expedientes);
+    }
+    catch (error) {
+        console.error("Error getting expediente list:", error);
+        res.status(500).json({ error: "Failed to get expediente list" });
+    }
+}
+
+async function getAvaibleExpedienteList(req: Request, res: Response): Promise<void> {
+    const pageSize = parseInt(req.params.pageSize as string) || 10;
+
+    // devuelve cuantas paginas hay
+    const expedienteCount = await Expediente.count();
     const totalPages = Math.ceil(expedienteCount / pageSize);
-    const response: responseData = {
-        status: 200,
-        message: 'Lista de expedientes obtenida exitosamente',
-        data: totalPages
-    };
-    res.status(200).json(response);
+    res.status(200).json({ totalPages });
+}
+
+async function getFilesForExpediente(req: Request, res: Response): Promise<void> {
+    const expedienteId = req.params.CI;
+    
+    console.log(`Getting files for expediente with ID ${expedienteId}`);
+
+    try {
+        const files = await FileModel.findAll({
+            where: { expedienteCI: expedienteId }   
+        });
+
+        if (files.length === 0) {
+            res.status(404).json({ error: "No files found for this expediente" });
+            return;
+        }
+
+        const fileDetails = files.map(file => ({
+            id: file.getDataValue('id'),
+            expedienteCI: file.getDataValue('expedienteCI'),
+            filename: file.getDataValue('filename'),
+            fileExtension: file.getDataValue('fileExtension'),
+            fileSize: file.getDataValue('fileSize'),
+            originalName: file.getDataValue('originalName')
+        }));
+
+        res.status(200).json(fileDetails);
+    }
+    catch (error) {
+        console.error("Error getting files for expediente:", error);
+        res.status(500).json({ error: "Failed to get files for expediente" });
+    }
+}
+
+async function getImageForFiles(req: Request, res: Response): Promise<void> {
+    const fileId = req.params.id;
+    
+    console.log(`Getting image for file with ID ${fileId}`);
+
+    try {
+        const file = await FileModel.findByPk(fileId);
+        if (!file) {
+            res.status(404).json({ error: "File not found" });
+            return;
+        }
+        const extensionsAllowed = ['.jpg', '.jpeg', '.png', '.webp'];
+
+        if (!extensionsAllowed.includes(file.getDataValue('fileExtension'))) {
+            res.status(400).json({ error: "File type not allowed" });
+            return;
+        }
+
+        const filePath = path.resolve(__dirname, '../../uploads', file.getDataValue('filename'));
+        console.log(`Sending file from path: ${filePath}`);
+
+        res.sendFile(filePath, (err) => {
+            if (err) {
+                console.error("Error sending file:", err);
+                res.status(500).json({ error: "Failed to send image file" });
+            }
+        });
+    }
+    catch (error) {
+        console.error("Error getting image for file:", error);
+        res.status(500).json({ error: "Failed to get image for file" });
+    }
+}
+
+async function downloadFile(req: Request, res: Response): Promise<void> {
+    const fileId = req.params.id;
+    
+    console.log(`Downloading file with ID ${fileId}`);
+
+    try {
+        const file = await FileModel.findByPk(fileId);
+        if (!file) {
+            res.status(404).json({ error: "File not found" });
+            return;
+        }
+
+        const filePath = path.join(__dirname, '../../uploads', file.getDataValue('filename'));
+        res.download(filePath, (err) => {
+            if (err) {
+                console.error("Error downloading file:", err);
+                res.status(500).json({ error: "Failed to download file" });
+            }
+        });
+    }
+    catch (error) {
+        console.error("Error downloading file:", error);
+        res.status(500).json({ error: "Failed to download file" });
+    }
 }
 
 export {
@@ -337,5 +260,8 @@ export {
     updateExpediente,
     deleteExpediente,
     getExpedienteInList,
-    getAvaibleExpedienteList
+    getAvaibleExpedienteList,
+    getFilesForExpediente,
+    getImageForFiles,
+    downloadFile
 };

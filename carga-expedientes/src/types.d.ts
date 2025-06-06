@@ -7,6 +7,15 @@ interface Expediente {
   carrera: string;
 }
 
+interface ExpeFile{
+  expedienteCI: number;
+  fileExtension: string;
+  fileSize: number;
+  originalName: string;
+  filename: string;
+  id: number;
+}
+
 interface responseData {
     status: number;
     message: string;
