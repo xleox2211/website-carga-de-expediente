@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getExpedientes, addExpediente, deleteExpediente } from "../ExpedienteManage";
+import { getExpedientes, addExpediente, deleteExpediente, updateExpediente } from "../ExpedienteManage";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BG from "../components/Bg";
@@ -7,11 +7,13 @@ import BlueButton from "../components/BlueButton";
 import ExpedienteTable from "../components/ExpedienteTable";
 import AddExpedienteDialog from "../components/addExpedienteDialog";
 import VerExpedienteDialog from "../components/VerExpedienteDialog";
+import EditExpedienteDialog from "../components/EditExpedienteDialog";
 import Paginador from "../components/Paginador";
 
 function DashboardPage() {
   const [isAddExpedienteOpen, setIsAddExpedienteOpen] = useState(false);
   const [isVerExpedienteOpen, setIsVerExpedienteOpen] = useState(false);
+  const [isEditExpedienteOpen, setIsEditExpedienteOpen] = useState(false);
 
   const [selectedExpediente, setSelectedExpediente] = useState<Expediente | null>({
     CI: 0,
@@ -27,6 +29,11 @@ function DashboardPage() {
     setIsVerExpedienteOpen(true);
   }
 
+  const handleEditExpediente = (expediente: Expediente) => {
+    setSelectedExpediente(expediente);
+    setIsEditExpedienteOpen(true);
+  }
+
   const [updatePageCount, setUpdatePageCount] = useState(false);
   const [Page, setPage] = useState(1);
   const [PageSize, setPageSize] = useState(10);
@@ -37,6 +44,18 @@ function DashboardPage() {
     await fetchData();
     setUpdatePageCount(!updatePageCount);
     setIsAddExpedienteOpen(false);
+  }
+
+  async function EditExpediente(expediente: FormData, CI: number) {
+    if (!CI) {
+      console.error("CI is required for updating an expediente.");
+      return;
+    }
+    console.log("Updating expediente with CI:", CI);
+    await updateExpediente(expediente, CI);
+    await fetchData();
+    setUpdatePageCount(!updatePageCount);
+    setIsEditExpedienteOpen(false);
   }
 
   function handleDeleteExpediente(CI: number) {
@@ -74,7 +93,7 @@ function DashboardPage() {
             <Paginador currentPage={Page} setPage={setPage} pageSize={PageSize} updatePageCount={updatePageCount} />
            <div className="flex-1 text-center">
              <div className="overflow-auto">
-           <ExpedienteTable expedientes={expedientes} onDelete={handleDeleteExpediente} onView={handleViewExpediente} />
+           <ExpedienteTable expedientes={expedientes} onDelete={handleDeleteExpediente} onView={handleViewExpediente} onEdit={handleEditExpediente} />
           </div>
           <div className="sticky bottom-0 bg-white pt-4">
             <div className="flex justify-center">
@@ -88,6 +107,7 @@ function DashboardPage() {
         </div>
       <AddExpedienteDialog isOpen={isAddExpedienteOpen} setOpen={setIsAddExpedienteOpen} expedientFunction={AddExpediente}/>
       <VerExpedienteDialog isOpen={isVerExpedienteOpen} setOpen={setIsVerExpedienteOpen} expedient={selectedExpediente}/>
+      <EditExpedienteDialog isOpen={isEditExpedienteOpen} setOpen={setIsEditExpedienteOpen} expedient={selectedExpediente} expedientFunction={EditExpediente}/>
       </main>
       <Footer />
     </BG>

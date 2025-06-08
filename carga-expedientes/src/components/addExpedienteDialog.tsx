@@ -13,35 +13,8 @@ interface ExpedientDialogProps
 function AddExpedienteDialog({isOpen, setOpen, expedientFunction} : ExpedientDialogProps)
 {
     const { user } = useAuth();
-    const [CI, setCI] = useState("");
-    const [Name, setName] = useState("");
-    const [Prof, setProf] = useState("");
-    const [Carr, setCarr] = useState("");
 
     const [ErrorMSG, setErrorMSG] = useState("");
-
-    function handleInputChange(event: React.ChangeEvent<HTMLInputElement>)
-    {
-        const { id, value } = event.target;
-
-        switch (id)
-        {
-            case "InCI":
-                setCI(value);
-                break;
-            case "InName":
-                setName(value);
-                break;
-            case "InProf":
-                setProf(value);
-                break;
-            case "InCarr":
-                setCarr(value);
-                break;
-            default:
-                break;
-        }
-    }
 
     function AddExpediente(event: React.FormEvent<HTMLFormElement>)
     {
@@ -88,9 +61,9 @@ function AddExpedienteDialog({isOpen, setOpen, expedientFunction} : ExpedientDia
         <form className="flex flex-col gap-2" onSubmit={(e) => {
             AddExpediente(e as React.FormEvent<HTMLFormElement>);
         }}>
-            <input name="CI"	  type="text" placeholder="CI" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-            <input name="nombre"  type="text" placeholder="Nombre" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-            <input name="carrera" type="text" placeholder="Carrera" onChange={handleInputChange} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input name="CI"	  type="text" placeholder="CI" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input name="nombre"  type="text" placeholder="Nombre" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input name="carrera" type="text" placeholder="Carrera" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
             <input type="file" name="files" multiple className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" accept=".png, .jpg, .jpeg, .pdf, .doc, .docx, .sxl, .xlsx" />
             <p className="text-red-300 decoration-0 underline">{ErrorMSG}</p>
             <BlueButton type="submit">Agregar</BlueButton>

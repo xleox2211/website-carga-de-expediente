@@ -255,6 +255,40 @@ async function downloadFile(req: Request, res: Response): Promise<void> {
     }
 }
 
+async function deleteFileFromExpediente(req: Request, res: Response): Promise<void> {
+    const expedienteCI = req.params.CI;
+    const fileId = req.params.fileId;
+
+    console.log(`Deleting file with ID ${fileId} from expediente with CI ${expedienteCI}`);
+
+    try {
+        const file = await FileModel.findOne({
+            where: {
+                expedienteCI: expedienteCI,
+                id: fileId
+            }
+        });
+
+        if (!file) {
+            res.status(404).json({ error: "File not found in this expediente" });
+            return;
+        }
+
+        // Delete the file from the filesystem
+        await deleteFile(file.getDataValue('filename'));
+
+        // Delete the file entry from the database
+        await FileModel.destroy({ where: { id: fileId } });
+
+        console.log(`File with ID ${fileId} deleted successfully from expediente with CI ${expedienteCI}`);
+        res.status(200).json({ message: "File deleted successfully" });
+    }
+    catch (error) {
+        console.error("Error deleting file from expediente:", error);
+        res.status(500).json({ error: "Failed to delete file from expediente" });
+    }
+}
+
 export {
     createExpediente,
     updateExpediente,
@@ -263,5 +297,6 @@ export {
     getAvaibleExpedienteList,
     getFilesForExpediente,
     getImageForFiles,
-    downloadFile
+    downloadFile,
+    deleteFileFromExpediente
 };

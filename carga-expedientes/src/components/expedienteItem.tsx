@@ -7,9 +7,10 @@ interface ExpedienteItemProps {
     carrera: string;
     deleteFunction?: (CI: number) => void;
     viewFunction?: (expediente: Expediente) => void;
+    editFunction?: (expediente: Expediente) => void;
 }
 
-function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion, carrera, deleteFunction, viewFunction}: ExpedienteItemProps)
+function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion, carrera, deleteFunction, viewFunction, editFunction}: ExpedienteItemProps)
 {
 
     return (
@@ -29,7 +30,7 @@ function ExpedienteItem({CI, nombre, profesor, fechaModificacion, fechaCreacion,
                     <td className="px-4 text-center">{carrera}</td>
                     <td className="px-4 text-center">
                         <div className="flex justify-center items-center">
-                        <button className="bg-blue-500 text-white px-4 py-2 rounded-l-md hover:bg-blue-600 transition duration-200 w-20">
+                        <button onClick={() => editFunction?.({CI, nombre, profesor, fechaCreacion, fechaModificacion, carrera})} className="bg-blue-500 text-white px-4 py-2 rounded-l-md hover:bg-blue-600 transition duration-200 w-20">
                           Editar
                         </button>
                         <button onClick={() => viewFunction?.({CI, nombre, profesor, fechaCreacion, fechaModificacion, carrera})} className="bg-green-500 text-white px-4 py-2 hover:bg-green-600 transition duration-200 w-14">

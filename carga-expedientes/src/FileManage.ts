@@ -6,8 +6,13 @@ export function getImageUrl(fileId: number): string {
     return `${API_URL}/image/${fileId}`;
 }
 
-export function DownloadFile(fileId: number): Promise<Blob> {
-    return axios.get(`${API_URL}/files/${fileId}`, {
+export async function DownloadFile(fileId: number): Promise<Blob> {
+    const response = await axios.get(`${API_URL}/files/${fileId}`, {
         responseType: "blob",
-    }).then(response => response.data);
+    });
+    return response.data;
+}
+
+export async function deleteExpedienteFile(fileId: number, expedienteCI: number): Promise<void> {
+    await axios.delete(`${API_URL}/files/${expedienteCI}/${fileId}`);
 }

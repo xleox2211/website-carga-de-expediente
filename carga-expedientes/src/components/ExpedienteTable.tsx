@@ -4,9 +4,10 @@ interface ExpedienteTableProps {
     expedientes: Expediente[];
     onDelete: (CI: number) => void;
     onView?: (expediente: Expediente) => void;
+    onEdit?: (expediente: Expediente) => void;
 }
 
-export default function ExpedienteTable({ expedientes, onDelete, onView }: ExpedienteTableProps) {
+export default function ExpedienteTable({ expedientes, onDelete, onView, onEdit }: ExpedienteTableProps) {
     return (
          <table className="w-full min-w-[800px]">
               {" "}
@@ -33,6 +34,7 @@ export default function ExpedienteTable({ expedientes, onDelete, onView }: Exped
                     <ExpedienteItem
                       deleteFunction={onDelete}
                       viewFunction={onView}
+                      editFunction={onEdit}
                       key={index}
                       {...expediente}
                     />
