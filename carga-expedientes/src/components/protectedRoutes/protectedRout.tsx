@@ -1,6 +1,6 @@
 // components/protectedRout.jsx
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../userContext';
+import { useAuth } from '../../userContext';
 
 interface ProtectedRouteProps {
     children?: React.ReactNode;

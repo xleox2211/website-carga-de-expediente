@@ -37,7 +37,7 @@ const createUser = (req = request, res = expressResponse) : void => {
 };
 
 const updateUser = (req = request, res = expressResponse): void => {
-
+    const CI = req.params.CI;
     const UserData: User = req.body;
 
     // Validación del usuario
@@ -53,7 +53,7 @@ const updateUser = (req = request, res = expressResponse): void => {
     // Validación del CI
     User.update(UserData as any, {
         where: {
-            CI: UserData.CI
+            CI: Number(CI)
         }
     })
     .then(() => {
@@ -250,6 +250,45 @@ function userValidation(toValid : User) : boolean {
     return true;
 }
 
+async function getAllUsers(req = request, res = expressResponse): Promise<void> {
+    const pageSize = parseInt(req.params.pageSize as string) || 10;
+    const page = parseInt(req.params.page as string) || 1;
+
+    const users = await User.findAll({
+        limit: pageSize,
+        offset: (page - 1) * pageSize
+    });
+
+    res.json(users);
+}
+
+async function isAdmin(req = request, res = expressResponse): Promise<void> {
+    const { CI } = req.params;
+    console.log(`Checking if user with CI ${CI} is an admin`);
+
+    const admin = await Admins.findOne({
+        where: {
+            CI: Number(CI)
+        }
+    });
+    if (!admin) {
+        const response: responseData = {
+            status: 404,
+            message: 'Administrador no encontrado',
+            error: 'Admin not found',
+            data: false
+        };
+        res.status(200).json(response);
+        return;
+    }
+    const response: responseData = {
+        status: 200,
+        message: 'Administrador encontrado',
+        data: true
+    };
+    res.status(200).json(response);
+}
+
 export {
     createUser,
     updateUser,
@@ -257,4 +296,6 @@ export {
     loginUser,
     upgradeUser,
     downgradeUser,
+    getAllUsers,
+    isAdmin
 };
