@@ -51,6 +51,7 @@ async function updateExpediente(req: Request, res: Response): Promise<void> {
     const expedienteData = req.body;
     const files: Express.Multer.File[] = Array.isArray(req.files) ? req.files : [];
 
+    console.log("Received expediente data:", expedienteData);
     try {
         const expedienteQuery = await Expediente.update(
             {
@@ -72,24 +73,19 @@ async function updateExpediente(req: Request, res: Response): Promise<void> {
             return;
         }
 
-        // Delete existing files from the database and filesystem
-        const existingFiles = await FileModel.findAll({ where: { expedienteCI: expedienteId } });
-
-        for (const file of existingFiles) {
-            await deleteFile(file.getDataValue('filename'));
-            await FileModel.destroy({ where: { id: file.getDataValue('id') } });
-        }
-
-        // Create new file entries for each uploaded file
+        // Add new files to the expediente
+        console.log(`expedienteData.CI: ${expedienteData.CI}`);
         const fileEntries = files.map(file => ({
-            expedienteCI: expedienteId,
+            expedienteCI: expedienteData.CI,
             filename: file.filename,
             fileExtension: path.extname(file.originalname),
             fileSize: file.size,
             originalName: file.originalname
         }));
 
-        await FileModel.bulkCreate(fileEntries);
+        if (fileEntries.length > 0) {
+            await FileModel.bulkCreate(fileEntries);
+        }
 
         console.log("Expediente updated successfully with files:", fileEntries);
         res.status(200).json({

@@ -4,7 +4,7 @@ import FileList from "./FileList";
 import FileListItemEdit from "./FileListItemEdit";
 import { getExpedienteFiles } from "../ExpedienteManage";
 import { useAuth } from "../userContext";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface EditExpedienteDialogProps {
     isOpen: boolean;
@@ -16,33 +16,57 @@ interface EditExpedienteDialogProps {
 export default function EditExpedienteDialog({ isOpen, setOpen, expedient, expedientFunction }: EditExpedienteDialogProps){
     const { user } = useAuth();
     const [ErrorMSG, setErrorMSG] = useState("");
+    const [files, setFiles] = useState<ExpeFile[]>([]);
 
-    
-    // set initial values for the form inputs based on the expedient prop
+    const nameInputRef = useRef<HTMLInputElement>(null);
+    const carreraInputRef = useRef<HTMLInputElement>(null);
+    const inputFileRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
-        if (expedient) {
-            const form = document.querySelector("form");
-            console.log("Editing expedient:", expedient);
-            if (form) {
-                console.log("Setting form values for expedient:", expedient);
-                document.getElementById("name")!.setAttribute("value", expedient.nombre);
-                document.getElementById("carrera")!.setAttribute("value", expedient.carrera);
+        if (isOpen && expedient) {
+            if (inputFileRef.current) {
+                inputFileRef.current.value = ""; // Clear the file input
             }
-            setErrorMSG("");
+            getFiles();
+            nameInputRef.current?.focus();
+            if (nameInputRef.current) {
+                nameInputRef.current.value = expedient.nombre;
+            }
+            if (carreraInputRef.current) {
+                carreraInputRef.current.value = expedient.carrera;
+            }
         }
-    }, [expedient]);
+    }, [isOpen, expedient]);
+
+    function getFiles()
+    {
+        console.log("Fetching files for expedient with CI:", expedient?.CI);
+        if (expedient?.CI) {
+            getExpedienteFiles(expedient.CI)
+                .then(_files => {
+                    setFiles(_files);
+                })
+                .catch(error => {
+                    console.error("Error fetching files:", error);
+                });
+        } else {
+            console.warn("No CI provided for expedient.");
+        }
+    }
 
     function editExpedient( event: React.FormEvent<HTMLFormElement>){
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
 
         formData.append("profesor", user.name);
-        formData.append("fechaCreacion", new Date().toISOString());
+        formData.append("CI", expedient?.CI.toString() || "0");
+        formData.append("fechaCreacion", expedient?.fechaCreacion || new Date().toISOString());
         formData.append("fechaModificacion", new Date().toISOString());
 
         const files = formData.getAll("files") as File[];
-        const expediente: Expediente = {
-            CI: Number(formData.get("CI")) as number,
+        console.log("Files to be added:", files);
+        const Newexpediente: Expediente = {
+            CI: Number(expedient?.CI) as number,
             nombre: formData.get("nombre") as string,
             carrera: formData.get("carrera") as string,
             profesor: user.name,
@@ -50,7 +74,7 @@ export default function EditExpedienteDialog({ isOpen, setOpen, expedient, exped
             fechaModificacion: new Date().toISOString(),
         };
 
-        if (files.length === 0 || expediente.CI === 0 || expediente.nombre === "" || expediente.carrera === "")
+        if (files.length === 0 || Newexpediente.CI === 0 || Newexpediente.nombre === "" || Newexpediente.carrera === "")
         {
             setErrorMSG("Por favor, completa todos los campos y selecciona al menos un archivo.");
             return;
@@ -65,7 +89,8 @@ export default function EditExpedienteDialog({ isOpen, setOpen, expedient, exped
 
         if (expedientFunction)
         {
-            expedientFunction(formData, expediente.CI);
+            expedientFunction(formData, Newexpediente.CI);
+            console.log("Expediente edited successfully:", Newexpediente);
         }
         setErrorMSG("");
     }
@@ -76,12 +101,12 @@ export default function EditExpedienteDialog({ isOpen, setOpen, expedient, exped
         <form className="flex flex-col gap-2" onSubmit={(e) => {
             editExpedient(e as React.FormEvent<HTMLFormElement>);
         }}>
-            <input id="name" name="nombre"  type="text" placeholder="Nombre" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-            <input id="carrera" name="carrera" type="text" placeholder="Carrera" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
-            <input type="file" name="files" multiple className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" accept=".png, .jpg, .jpeg, .pdf, .doc, .docx, .sxl, .xlsx" />
-            <FileList expedient={expedient} fileItemType={FileListItemEdit} />
+            <input id="name" name="nombre" ref={nameInputRef} type="text" placeholder="Nombre" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input id="carrera" name="carrera" ref={carreraInputRef} type="text" placeholder="Carrera" className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" />
+            <input type="file" name="files" multiple ref={inputFileRef} className="bg-gray-200 p-3 rounded-md outline-none shadow-inner" accept=".png, .jpg, .jpeg, .pdf, .doc, .docx, .sxl, .xlsx" />
+            <FileList files={files} fileItemType={FileListItemEdit} updateFunction={getFiles}/>
             <p className="text-red-300 decoration-0 underline">{ErrorMSG}</p>
-            <BlueButton type="submit">Agregar</BlueButton>
+            <BlueButton type="submit">Editar</BlueButton>
         </form>
         </FloatDialog>
     )

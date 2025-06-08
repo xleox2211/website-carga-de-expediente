@@ -3,9 +3,10 @@ import { deleteExpedienteFile } from "../FileManage";
 
 interface FileListItemProps {
     file: ExpeFile;
+    updateFunction?: () => void;
 }
 
-export default function FileListItemEdit({ file }: FileListItemProps) {
+export default function FileListItemEdit({ file, updateFunction }: FileListItemProps) {
 
     function reduceFileName(fileName: string): string {
             const maxLength = 30; // Maximum length of the file name
@@ -24,6 +25,9 @@ export default function FileListItemEdit({ file }: FileListItemProps) {
         deleteExpedienteFile(file.id, file.expedienteCI)
             .then(() => {
                 console.log("File deleted successfully");
+                if (updateFunction) {
+                    updateFunction();
+                }
             })
             .catch((error: any) => {
                 console.error("Error deleting file:", error);

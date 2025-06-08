@@ -1,5 +1,5 @@
 import FloatDialog from "./FloatDialog";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { getExpedienteFiles } from "../ExpedienteManage";
 import FileList from "./FileList";
 
@@ -10,6 +10,8 @@ interface VerExpedienteDialogProps {
 }
 
 export default function VerExpedienteDialog({ isOpen, setOpen, expedient }: VerExpedienteDialogProps) {
+    const [files, setFiles] = useState<ExpeFile[]>([]);
+
 
     useEffect(() => {
         if (isOpen && expedient) {
@@ -41,11 +43,11 @@ export default function VerExpedienteDialog({ isOpen, setOpen, expedient }: VerE
                     <p><strong>CI:</strong> {expedient.CI}</p>
                     <p><strong>Nombre:</strong> {expedient.nombre}</p>
                     <p><strong>Carrera:</strong> {expedient.carrera}</p>
-                    <p><strong>Profesor:</strong> {expedient.profesor}</p>
+                    <p><strong>Tutor Academico:</strong> {expedient.profesor}</p>
                     <p><strong>Fecha de Creación:</strong> {new Date(expedient.fechaCreacion).toLocaleDateString()}</p>
                     <p><strong>Fecha de Modificación:</strong> {new Date(expedient.fechaModificacion).toLocaleDateString()}</p>
                     <p><strong>Archivos Adjuntos:</strong></p>
-                    <FileList expedient={expedient}/>
+                    <FileList files={files} />
                 </div>
             ) : (
                 <p>No hay información del expediente disponible.</p>
